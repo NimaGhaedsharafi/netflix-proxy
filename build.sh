@@ -201,12 +201,12 @@ log_action_end_msg $?
 
 # check if public IPv6 access is available
 log_action_begin_msg "creating Docker and sniproxy configuration templates"
-sudo cp ${CWD}/docker-sniproxy/sniproxy.conf.template ${CWD}/docker-sniproxy/sniproxy.conf &>> ${CWD}/netflix-proxy.log\
-  && sudo cp ${CWD}/docker-compose.yml.template ${CWD}/docker-compose.yml &>> ${CWD}/netflix-proxy.log
+sudo cp -T ${CWD}/docker-sniproxy/sniproxy.conf.template ${CWD}/docker-sniproxy/sniproxy.conf &>> ${CWD}/netflix-proxy.log\
+  && sudo cp -T ${CWD}/docker-compose.yml.template ${CWD}/docker-compose.yml &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
 
 log_action_begin_msg "disabling Docker iptables control"
-cp ${CWD}/daemon.json /etc/docker/
+cp -T ${CWD}/daemon.json /etc/docker/
 log_action_end_msg $?
 
 if [[ "${IPV6}" == '1' ]]; then
@@ -258,7 +258,7 @@ sudo service ${SERVICE}-persistent save &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
 
 log_action_begin_msg "creating dnsmasq.conf from template"
-sudo cp ${CWD}/dnsmasq.conf.template ${CWD}/dnsmasq.conf &>> ${CWD}/netflix-proxy.log
+sudo cp -T ${CWD}/dnsmasq.conf.template ${CWD}/. &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
 
 if [[ "${IPV6}" == '1' ]] && [[ ${EXTIP6} ]]; then
@@ -301,18 +301,18 @@ log_action_end_msg $?
 log_action_begin_msg "configuring admin backend"
 PLAINTEXT=$(${CWD}/auth/pbkdf2_sha256_hash.py | awk '{print $1}')\
   && HASH=$(${CWD}/auth/pbkdf2_sha256_hash.py ${PLAINTEXT} | awk '{print $2}')\
-  && sudo cp ${CWD}/auth/db/auth.default.db ${CWD}/auth/db/auth.db &>> ${CWD}/netflix-proxy.log\
+  && sudo cp -T ${CWD}/auth/db/auth.default.db ${CWD}/auth/db/auth.db &>> ${CWD}/netflix-proxy.log\
   && sudo $(which sqlite3) ${CWD}/auth/db/auth.db "UPDATE users SET password = '${HASH}' WHERE ID = 1;" &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
 
 log_action_begin_msg "configuring admin frontend"
-sudo cp ${CWD}/Caddyfile.template ${CWD}/Caddyfile &>> ${CWD}/netflix-proxy.log\
+sudo cp -T ${CWD}/Caddyfile.template ${CWD}/Caddyfile &>> ${CWD}/netflix-proxy.log\
   && printf "proxy / localhost:${SDNS_ADMIN_PORT} {\n    except /static\n    header_upstream Host {host}\n    header_upstream X-Forwarded-For {remote}\n    header_upstream X-Real-IP {remote}\n    header_upstream X-Forwarded-Proto {scheme}\n}\n"\
   | sudo tee -a ${CWD}/Caddyfile &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
 
 log_action_begin_msg "creating cron scripts"
-sudo cp ${CWD}/crond.template /etc/cron.d/netflix-proxy &>> ${CWD}/netflix-proxy.log\
+sudo cp -T ${CWD}/crond.template /etc/cron.d/netflix-proxy &>> ${CWD}/netflix-proxy.log\
   && sudo $(which sed) -i'' "s#{{CWD}}#${CWD}#g" /etc/cron.d/netflix-proxy &>> ${CWD}/netflix-proxy.log\
   && sudo service cron restart &>> ${CWD}/netflix-proxy.log
 log_action_end_msg $?
